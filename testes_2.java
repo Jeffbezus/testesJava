@@ -4,128 +4,119 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.support.ui.Select;
 
 public class testeCampoTreinamento2 {
-	WebDriver driver = new FirefoxDriver();
+	
+	private WebDriver driver;
+	private DSL dsl;
+	private CampoTreinamentoPage page;
+
 	@Before
 	public void inicializa() {
+		driver = new FirefoxDriver();
 		driver.manage().window().setSize(new Dimension(1000, 1000));
 		driver.get("file:///" + System.getProperty("user.dir") + "/src/main/resources/componentes.html");
-		
-		
+		dsl = new DSL(driver);
+		page = new CampoTreinamentoPage(driver);
 	}
 	
+
 	@After
 	public void finaliza() {
 		driver.quit();
 	}
+	
 	@Test
 	public void verificarTexto() {
-		driver.findElement(By.id("alert")).click();
-		Assert.assertEquals("Alert Simples", driver.switchTo().alert().getText());
-		driver.switchTo().alert().accept();
-		
-		driver.findElement(By.id("elementosForm:nome")).sendKeys("Alert Simples");
-		Assert.assertEquals("Alert Simples", driver.findElement(By.id("elementosForm:nome")).getAttribute("value"));
-		
+		dsl.buttonClick("alert");
+		dsl.compararTextoAlert("Alert Simples");
+		dsl.aceitarAlert();
+		dsl.escreve("elementosForm:nome", "Alert Simples");
+		dsl.comparaçãoTextoAtributo("Alert Simples", "elementosForm:nome");
 	}
 	
 	@Test
 	public void interagirAlertaAccept() {
-		driver.findElement(By.id("confirm")).click();
-		
-		Alert alerta = driver.switchTo().alert();
-		Assert.assertEquals("Confirm Simples", alerta.getText());
-		alerta.accept();
-		
-		Assert.assertEquals(alerta.getText(), "Confirmado");
-		
-		alerta.accept();
+		dsl.buttonClick("confirm");
+		dsl.compararTextoAlert("Confirm Simples");
+		dsl.aceitarAlert();
+		dsl.compararTextoAlert("Confirmado");
+		dsl.aceitarAlert();
 	}
 	
 	@Test
 	public void interagirAlertaDismiss() {
-		driver.findElement(By.id("confirm")).click();
-		
-		Alert alerta = driver.switchTo().alert();
-		
-		Assert.assertEquals("Confirm Simples", alerta.getText());
-		alerta.dismiss();
-		
-		Assert.assertEquals(alerta.getText(), "Negado");
-		alerta.accept();
+		dsl.buttonClick("confirm");
+		dsl.compararTextoAlert("Confirm Simples");
+		dsl.recusarAlert();
+		dsl.compararTextoAlert("Negado");
+		dsl.aceitarAlert();
 	}
 	
 	@Test
 	public void interagirPrompt() {
-		driver.findElement(By.id("prompt")).click();
-		
-		Alert prompt = driver.switchTo().alert();
-		Assert.assertEquals("Digite um numero", prompt.getText());
-		prompt.sendKeys("12");
-		prompt.accept();
-
-		Assert.assertEquals(prompt.getText(), "Era 12?");
-		prompt.accept();
-		
-		Assert.assertEquals(prompt.getText(), ":D");
-		prompt.accept();
+		dsl.buttonClick("prompt");
+		dsl.compararTextoAlert("Digite um numero");
+		dsl.escreverAlert("12");
+		dsl.aceitarAlert();
+		dsl.compararTextoAlert("Era 12?");
+		dsl.aceitarAlert();
+		dsl.compararTextoAlert(":D");
+		dsl.aceitarAlert();
 	}
 	@Test
 	public void cadastro() {
-		driver.findElement(By.id("elementosForm:nome")).sendKeys("Jeferson");
-		driver.findElement(By.id("elementosForm:sobrenome")).sendKeys("Guedes");
-		driver.findElement(By.id("elementosForm:sexo:0")).click();
-		driver.findElement(By.id("elementosForm:comidaFavorita:2")).click();
-		new Select(driver.findElement(By.id("elementosForm:escolaridade"))).selectByVisibleText("Superior");	
-		new Select(driver.findElement(By.id("elementosForm:esportes"))).selectByVisibleText("Natacao");	
+		page.setNome("Jeferson");
+		page.setSobrenome("Guedes");
+		page.setSexoMasculino();
+		page.setComidaPizza();
+		page.setEscolaridade("Mestrado");
+		page.setEsporte("Natacao");
+		page.cadastrar();
 		
-		driver.findElement(By.id("elementosForm:cadastrar")).click();
+		Assert.assertTrue(dsl.getTextBy(By.id("resultado")).startsWith("Cadastrado!"));
+		Assert.assertTrue(dsl.getTextBy(By.id("descNome")).endsWith("Jeferson"));
+		page.verificarSobrenomeCadastro("Sobrenome: Guedes");
+		page.verificarSexoCadastro("Sexo: Masculino");
+		page.verificarComidaCadastro("Comida: Pizza");
+		page.verificarEscolaridadeCadastro("Escolaridade: mestrado");
+		page.verificarEsporteCadastro("Esportes: Natacao");
 		
-		Assert.assertTrue(driver.findElement(By.id("resultado")).getText().startsWith("Cadastrado!"));
-		Assert.assertTrue(driver.findElement(By.id("descNome")).getText().endsWith("jeferson"));
-		Assert.assertEquals("guedes", driver.findElement(By.id("descSobrenome")).getText());
-		Assert.assertEquals("Masculino", driver.findElement(By.id("descSexo")).getText());
-		Assert.assertEquals("Pizza", driver.findElement(By.id("descComida")).getText());	
+		
 	}
 	@Test
 	public void frames() {
-		driver.switchTo().frame("frame1");
-		driver.findElement(By.id("frameButton")).click();
-		Alert alert = driver.switchTo().alert();
-		String msg = alert.getText();
-		Assert.assertEquals("Frame OK!", msg);
-		alert.accept();
 		
+		dsl.clickFrame("frame1", "frameButton");	
+		dsl.compararTextoAlert("Frame OK!");
+		dsl.aceitarAlert();
 		driver.switchTo().defaultContent();
-		driver.findElement(By.id("elementosForm:nome")).sendKeys(msg);
+		dsl.escreve("elementosForm:nome", "Jeferson");
 	}
 	
 	@Test
 	public void popUp() {
-		driver.findElement(By.id("buttonPopUpEasy")).click();
+		dsl.buttonClick("buttonPopUpEasy");
 		driver.switchTo().window("Popup");
-		driver.findElement(By.tagName("textarea")).sendKeys("Deu certo?");
+		dsl.escreveBy(By.tagName("textarea"), "Deu certo?");
 		//driver.close();
 		driver.switchTo().window("");
-		driver.findElement(By.id("elementosForm:sugestoes")).sendKeys("e agora?");
+		dsl.escreve("elementosForm:sugestoes", "e agora?");
 	}
 	
 	@Test
 	public void popUpSemTitulo() {
-		driver.findElement(By.id("buttonPopUpEasy")).click();
+		dsl.buttonClick("buttonPopUpEasy");
 		System.out.println(driver.getWindowHandle());
 		System.out.println(driver.getWindowHandles());
 		driver.switchTo().window((String)driver.getWindowHandles().toArray()[1]);
-		driver.findElement(By.tagName("textarea")).sendKeys("Deu certo?");
+		dsl.escreveBy(By.tagName("textarea"), "Deu certo?");
 		driver.switchTo().window((String) driver.getWindowHandles().toArray()[0]);
-		driver.findElement(By.tagName("textarea")).sendKeys("e agora?");
+		dsl.escreveBy(By.tagName("textarea"), "e agora?");
 	}
 	
 }
