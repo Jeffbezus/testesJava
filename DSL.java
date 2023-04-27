@@ -61,7 +61,11 @@ public class DSL {
 		WebElement element = driver.findElement(by);
 		Select combo = new Select(element);
 		combo.selectByVisibleText(text);
-		
+	}
+	
+	public void selectComboPrime(By by, By by2) {
+		driver.findElement(by).click();
+		driver.findElement(by2).click();
 	}
 	
 	public void deselectCombo(String id,String text) {
